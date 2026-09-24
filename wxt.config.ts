@@ -35,6 +35,14 @@ const sharedPermissions: Browser.runtime.ManifestPermission[] = [
 export default defineConfig({
   srcDir: "src",
   publicDir: "src/public",
+  // Disable automatic module preloading in Vite. Extension content scripts run
+  // across different execution contexts (MAIN vs ISOLATED), causing Chromium
+  // to raise cross-world extension resource mismatch warnings when preloading.
+  vite: () => ({
+    build: {
+      modulePreload: false
+    }
+  }),
   modules: ["@wxt-dev/module-svelte", "wxt-module-layers"],
   layers: {
     sources: ["layers/background", "layers/popup", "layers/processing", "layers/youtube"]
