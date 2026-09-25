@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,7 +14,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build Chrome + Firefox release artifacts
+    name: Build Chrome ZIP release
     runs-on: ubuntu-latest
 
     steps:
@@ -38,7 +37,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Verify release tag matches package version
-        if: github.event_name == 'push'
         shell: bash
         run: |
           VERSION="$(node -p "require('./package.json').version")"
@@ -48,62 +46,17 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare Chrome CRX private key
-        shell: bash
-        env:
-          CHROME_CRX_PRIVATE_KEY: ${{ secrets.CHROME_CRX_PRIVATE_KEY }}
-        run: |
-          if [ -z "$CHROME_CRX_PRIVATE_KEY" ]; then
-            echo "CHROME_CRX_PRIVATE_KEY secret is required."
-            exit 1
-          fi
-          printf '%s\n' "$CHROME_CRX_PRIVATE_KEY" > "$RUNNER_TEMP/chrome-extension.pem"
-          chmod 600 "$RUNNER_TEMP/chrome-extension.pem"
+      - name: Build Chrome ZIP
+        run: pnpm build:pack
 
-      - name: Build and sign release artifacts
-        env:
-          CHROME_CRX_PRIVATE_KEY_PATH: ${{ runner.temp }}/chrome-extension.pem
-          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
-          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
-        run: |
-          if [ -z "$AMO_JWT_ISSUER" ] || [ -z "$AMO_JWT_SECRET" ]; then
-            echo "AMO_JWT_ISSUER and AMO_JWT_SECRET secrets are required."
-            exit 1
-          fi
-          pnpm release
-
-      - name: Verify release artifacts
+      - name: Verify release artifact
         shell: bash
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          test -f ".output/youtube-downloader-$VERSION-chrome.zip"
-          test -f ".output/youtube-downloader-$VERSION-chrome.crx"
-          test -f ".output/youtube-downloader-$VERSION-firefox.xpi"
-          test -f "docs/updates.json"
-          echo "Release artifacts:"
-          ls -lh ".output/youtube-downloader-$VERSION-chrome.zip" \
-                ".output/youtube-downloader-$VERSION-chrome.crx" \
-                ".output/youtube-downloader-$VERSION-firefox.xpi"
-
-      - name: Update Firefox update manifest on main
-        shell: bash
-        run: |
-          cp docs/updates.json "$RUNNER_TEMP/updates.json"
-
-          git fetch origin main
-          git checkout -B main origin/main
-          cp "$RUNNER_TEMP/updates.json" docs/updates.json
-
-          if git diff --quiet -- docs/updates.json; then
-            echo "docs/updates.json is already current."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/updates.json
-          git commit -m "chore(release): update Firefox update manifest"
-          git push origin HEAD:main
+          ARTIFACT=".output/youtube-downloader-$VERSION-chrome.zip"
+          test -f "$ARTIFACT"
+          echo "Release artifact:"
+          ls -lh "$ARTIFACT"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
@@ -111,9 +64,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: |
-            .output/youtube-downloader-*-chrome.zip
-            .output/youtube-downloader-*-chrome.crx
-            .output/youtube-downloader-*-firefox.xpi
+          files: .output/youtube-downloader-*-chrome.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
