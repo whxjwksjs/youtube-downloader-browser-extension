@@ -1,7 +1,7 @@
 const YTDL_IFRAME_QUERY_PARAM = "ytdl=1";
 
 export default defineContentScript({
-  matches: ["https://www.youtube.com/*"],
+  matches: ["https://www.youtube.com/*", "https://m.youtube.com/*"],
   world: "MAIN",
   runAt: "document_start",
   allFrames: true,

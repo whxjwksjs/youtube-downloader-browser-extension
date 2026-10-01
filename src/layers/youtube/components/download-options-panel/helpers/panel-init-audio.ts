@@ -1,11 +1,9 @@
 import { findAudioFormatForPlayerTrack } from "./panel-audio-actions";
 import { PLAYER_ACTIVE_AUDIO } from "./player-active-tracks.svelte";
+import { pickPreferredAudioFormat, selectPreferredAudioFormat } from "@/lib/youtube/select-audio-format";
+import { normalizeLanguageCode, sortAudioFormatsByDisplayName } from "@/lib/youtube/video-helpers";
 import {
-  normalizeLanguageCode,
-  selectPreferredAudioFormat,
-  sortAudioFormatsByDisplayName
-} from "@/lib/youtube/video-helpers";
-import {
+  AudioCodecPreference,
   AudioTrackLanguageMode,
   PanelTrackMode,
   type AdaptiveFormatItem,
@@ -18,8 +16,11 @@ const IS_WATCH_PAGE = location.pathname === "/watch";
 
 export { IS_WATCH_PAGE };
 
-export function getPreferredMusicAudioFormat(audioFormats: AdaptiveFormatItem[]) {
-  return audioFormats.find(format => format.mimeType.includes("mp4")) ?? audioFormats[0] ?? null;
+export function getPreferredMusicAudioFormat(
+  audioFormats: AdaptiveFormatItem[],
+  codecPreference: AudioCodecPreference = AudioCodecPreference.Opus
+) {
+  return pickPreferredAudioFormat(audioFormats, codecPreference);
 }
 
 type OptionsVideoDataParams = Prettify<{
@@ -28,7 +29,7 @@ type OptionsVideoDataParams = Prettify<{
 }>;
 export function resolveInitialAudioFormat({ options, videoData }: OptionsVideoDataParams) {
   if (videoData.isMusic) {
-    return getPreferredMusicAudioFormat(videoData.audioFormats);
+    return getPreferredMusicAudioFormat(videoData.audioFormats, options.audioCodecPreference);
   }
 
   const isFollowPlayerMode = IS_WATCH_PAGE && (
@@ -53,6 +54,7 @@ export function resolveInitialAudioFormat({ options, videoData }: OptionsVideoDa
     audioFormats: videoData.audioFormats,
     videoMimeType: videoData.videoFormats[0]?.mimeType ?? "",
     languageMode: options.audioTrackLanguageMode,
+    codecPreference: options.audioCodecPreference,
     locale: document.documentElement.lang,
     browserLanguage: navigator.language,
     customLanguage: options.customLanguage

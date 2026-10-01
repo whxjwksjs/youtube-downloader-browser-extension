@@ -1,10 +1,11 @@
+import { pickPreferredAudioFormat } from "@/lib/youtube/select-audio-format";
 import { normalizeLanguageCode } from "@/lib/youtube/video-helpers";
 import type { AdaptiveFormatItem, Prettify } from "@/types";
 
 export function findMatchVideoAudioFormat(audioFormats: AdaptiveFormatItem[]) {
   return audioFormats.find(format => !format.audioTrack)
     ?? audioFormats.find(format => format.audioTrack?.audioIsDefault)
-    ?? audioFormats[0]
+    ?? pickPreferredAudioFormat(audioFormats)
     ?? null;
 }
 

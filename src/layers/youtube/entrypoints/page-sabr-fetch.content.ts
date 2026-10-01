@@ -61,7 +61,7 @@ function getPristineFetch(): typeof fetch {
 }
 
 export default defineContentScript({
-  matches: ["https://www.youtube.com/*"],
+  matches: ["https://www.youtube.com/*", "https://m.youtube.com/*"],
   allFrames: false,
   world: "MAIN",
   runAt: "document_start",

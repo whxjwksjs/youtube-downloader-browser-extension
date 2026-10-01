@@ -31,7 +31,7 @@ export function resolveInitialDownloadType({ options, videoData }: OptionsVideoD
 
 export function resolveInitialExtension({ options, videoData }: OptionsVideoDataParams) {
   if (videoData.isMusic) {
-    const defaultFormat = getPreferredMusicAudioFormat(videoData.audioFormats);
+    const defaultFormat = getPreferredMusicAudioFormat(videoData.audioFormats, options.audioCodecPreference);
     return resolveAutoExtension({
       extension: options.ext.audio,
       mimeType: defaultFormat?.mimeType ?? "",

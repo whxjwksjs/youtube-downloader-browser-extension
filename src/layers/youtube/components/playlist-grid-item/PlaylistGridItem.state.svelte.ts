@@ -10,6 +10,7 @@ import {
 import { resolveVideoFilename } from "@/lib/utils/containers";
 import { normalizeLanguageCode } from "@/lib/youtube/audio-format-helpers";
 import { filterVideoFormatsByEnhancedBitrate } from "@/lib/youtube/format-display";
+import { pickPreferredAudioFormat } from "@/lib/youtube/select-audio-format";
 import {
   DownloadType,
   PlaylistOutputMode,
@@ -58,7 +59,7 @@ function selectPlaylistAudioFormat(audioFormats: AdaptiveFormatItem[]) {
 
   const hasMultipleTracks = audioFormats.some(format => format.audioTrack);
   if (!hasMultipleTracks) {
-    return audioFormats[0];
+    return pickPreferredAudioFormat(audioFormats, CONTENT_OPTIONS.audioCodecPreference);
   }
 
   const preferredLanguages = [
@@ -82,7 +83,7 @@ function selectPlaylistAudioFormat(audioFormats: AdaptiveFormatItem[]) {
     }
   }
 
-  return audioFormats[0];
+  return pickPreferredAudioFormat(audioFormats, CONTENT_OPTIONS.audioCodecPreference);
 }
 
 function filterCaptionTracks(captionTracks: CaptionTrack[]) {

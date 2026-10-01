@@ -1,5 +1,6 @@
 import { resolveVideoFilename } from "@/lib/utils/containers";
 import { filterVideoFormatsByEnhancedBitrate } from "@/lib/youtube/format-display";
+import { pickPreferredAudioFormat } from "@/lib/youtube/select-audio-format";
 import {
   DownloadType,
   VideoQualityMode,
@@ -50,7 +51,7 @@ export function buildDownloadRequest({
     type: downloadType,
     videoId: data.videoId,
     videoItag: videoFormat?.itag ?? 0,
-    audioItag: data.audioFormats[0]?.itag ?? 0,
+    audioItag: pickPreferredAudioFormat(data.audioFormats, options.audioCodecPreference)?.itag ?? 0,
     filenameOutput: resolveVideoFilename({
       videoData: data,
       options

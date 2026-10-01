@@ -1,6 +1,13 @@
 import { executeMuxPhases, tryCheckOutput } from "./mux-handler-exec";
 import { cleanupMuxFiles, writeMuxInputFiles } from "./mux-handler-files";
-import { postFileResult, state, tryRmdir, tryUnmount } from "./mux-state";
+import {
+  postFileResult,
+  state,
+  tryRmdir,
+  tryUnmount,
+  tryUnlink
+} from "./mux-state";
+import { fetchThumbnail } from "./mux-thumbnail";
 import { cleanupOpfsOutput, createOpfsOutputFs, createOpfsOutputHandle } from "./opfs-output-fs";
 import type { MuxVideoAudioJob } from "@/lib/download-pipeline/mux-worker-types";
 import {
@@ -13,13 +20,16 @@ import {
 const WORKERFS_MOUNT_SUFFIX = "-opfs-in";
 const OPFS_OUT_SUFFIX = "-opfs-out";
 const MKV_EXTENSION = "mkv";
+const WEBM_EXTENSION = "webm";
 const VIDEO_TEMP_SUFFIX = "video";
+const COVER_FILENAME_PREFIX = "cover";
+const WATCH_URL_PREFIX = "https://www.youtube.com/watch?v=";
 
 export async function handleMuxVideoAudio(job: MuxVideoAudioJob) {
   const {
     videoData, videoFile, audioTracks, subtitleTracks,
     videoMimeType, audioMimeType, videoId, tabId,
-    defaultAudioTrackIndex, filenameOutput
+    defaultAudioTrackIndex, filenameOutput, thumbnailUrl
   } = job;
   state.currentVideoId = videoId;
   state.currentTabId = tabId;
@@ -64,6 +74,18 @@ export async function handleMuxVideoAudio(job: MuxVideoAudioJob) {
     subtitleTracks
   });
 
+  // Embed the video thumbnail as cover art (MP4/MKV support attached
+  // pictures; WebM does not, so it is skipped there like in the audio path).
+  let coverFilename: string | undefined;
+  const isCoverArtEmbeddable = Boolean(thumbnailUrl) && targetExtension !== WEBM_EXTENSION;
+  if (isCoverArtEmbeddable) {
+    const thumbnail = await fetchThumbnail(thumbnailUrl!);
+    if (thumbnail) {
+      coverFilename = `${COVER_FILENAME_PREFIX}.${thumbnail.extension}`;
+      state.ffmpeg!.FS.writeFile(coverFilename, thumbnail.data);
+    }
+  }
+
   const outputHandle = await createOpfsOutputHandle(videoId);
   const syncHandle = await outputHandle.createSyncAccessHandle();
   const opfsOutDir = `/${videoId}${OPFS_OUT_SUFFIX}`;
@@ -83,6 +105,8 @@ export async function handleMuxVideoAudio(job: MuxVideoAudioJob) {
         videoFilename,
         audioFilenames,
         subtitleFilenames,
+        coverFilename,
+        watchUrl: `${WATCH_URL_PREFIX}${videoId}`,
         outputFilename: opfsOutputFilename,
         muxFilename,
         useIntermediateMkv,
@@ -109,6 +133,10 @@ export async function handleMuxVideoAudio(job: MuxVideoAudioJob) {
       useIntermediateMkv,
       targetExtension
     });
+
+    if (coverFilename) {
+      tryUnlink(coverFilename);
+    }
 
     if (isWorkerfsVideo) {
       tryUnmount(workerfsDir);

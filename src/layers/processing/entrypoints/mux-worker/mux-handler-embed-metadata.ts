@@ -55,6 +55,7 @@ export async function handleEmbedMetadata(job: EmbedMetadataJob) {
   ffmpegArgs.push("-c:a", audioCodec);
   ffmpegArgs.push("-metadata", `title=${sanitizeForFFmpeg(metadata.title)}`);
   ffmpegArgs.push("-metadata", `artist=${sanitizeForFFmpeg(metadata.artist)}`);
+  ffmpegArgs.push("-metadata", `comment=https://www.youtube.com/watch?v=${videoId}`);
 
   if (metadata.albumArtist) {
     ffmpegArgs.push("-metadata", `album_artist=${sanitizeForFFmpeg(metadata.albumArtist)}`);

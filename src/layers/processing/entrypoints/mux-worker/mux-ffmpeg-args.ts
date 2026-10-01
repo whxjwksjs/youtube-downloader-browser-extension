@@ -1,3 +1,4 @@
+import { sanitizeForFFmpeg } from "./mux-thumbnail";
 import type { MuxVideoAudioJob } from "@/lib/download-pipeline/mux-worker-types";
 import {
   CONTAINER_SPECS,
@@ -10,6 +11,12 @@ import type { Prettify } from "@/types";
 
 const FFMPEG_CODEC_COPY = "copy";
 const FFMPEG_SUBTITLE_CODEC_WEBVTT = "webvtt";
+
+const COVER_MIME_TYPE_BY_EXTENSION: Record<string, string> = {
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp"
+};
 
 // Pin the demuxer per input so FFmpeg never auto-probes downloaded bytes
 // into an unexpected (and potentially vulnerable) demuxer
@@ -126,6 +133,8 @@ export type MuxFfmpegParams = Prettify<{
   videoFilename: string;
   audioFilenames: string[];
   subtitleFilenames: string[];
+  coverFilename?: string;
+  watchUrl?: string;
   outputFilename: string;
   muxFilename: string;
   useIntermediateMkv: boolean;
@@ -171,7 +180,7 @@ function appendTrackMetadata({ ffmpegArgs, params }: AppendTrackMetadataParams) 
 
 export function buildMuxFfmpegArgs(params: MuxFfmpegParams) {
   const {
-    videoFilename, audioFilenames, subtitleFilenames,
+    videoFilename, audioFilenames, subtitleFilenames, coverFilename, watchUrl,
     outputFilename, muxFilename, useIntermediateMkv, audioMimeType, targetExtension
   } = params;
 
@@ -196,6 +205,19 @@ export function buildMuxFfmpegArgs(params: MuxFfmpegParams) {
       targetExtension
     })
   );
+
+  // Phase 1 always produces MKV, where cover art is a proper file attachment.
+  // The phase-2 remux (-map 0) carries it through, and the MP4 muxer turns it
+  // into an attached_pic stream automatically.
+  const hasCoverArt = Boolean(coverFilename);
+  if (hasCoverArt) {
+    const coverMimeType = COVER_MIME_TYPE_BY_EXTENSION[getFileExtension(coverFilename!)] ?? "image/jpeg";
+    ffmpegArgs.push("-attach", coverFilename!, "-metadata:s:t", `mimetype=${coverMimeType}`);
+  }
+
+  if (watchUrl) {
+    ffmpegArgs.push("-metadata", `comment=${sanitizeForFFmpeg(watchUrl)}`);
+  }
 
   const hasSubtitleFiles = subtitleFilenames.length > 0;
   if (hasSubtitleFiles) {

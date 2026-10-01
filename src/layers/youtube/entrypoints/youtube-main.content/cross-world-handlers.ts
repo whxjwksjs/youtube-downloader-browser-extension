@@ -1,6 +1,8 @@
 import { registerButtonDataHandler } from "./button-data-handler";
 import "./cta-button.css";
 import { cancelActiveDownload, startDownload } from "./video/download";
+import { videoDataCache } from "./video/video-data";
+import { buildInitialDownloadState } from "./watch-button/initial-download-state";
 import { CrossWorldMessage, crossWorldMessenger, dispatchButtonClick } from "@/lib/messaging/cross-world-messenger";
 import {
   DATA_BUTTON_ID_ATTR,
@@ -17,6 +19,23 @@ const SETTINGS_OPTIONS_ID_SELECTOR = "#options";
 export function registerCrossWorldHandlers() {
   crossWorldMessenger.onMessage(CrossWorldMessage.DownloadRequest, ({ data }) => {
     startDownload(data).catch(() => {});
+  });
+
+  crossWorldMessenger.onMessage(CrossWorldMessage.RequestPageDownload, ({ data }) => {
+    const videoData = videoDataCache.get(data.videoId);
+    if (!videoData?.isDownloadable) {
+      return;
+    }
+
+    const state = buildInitialDownloadState(videoData);
+    startDownload({
+      type: state.downloadType,
+      videoId: videoData.videoId,
+      videoItag: state.videoItag,
+      audioItag: state.audioItag,
+      audioTrackId: state.audioTrackId,
+      filenameOutput: state.filename
+    }).catch(() => {});
   });
 
   crossWorldMessenger.onMessage(CrossWorldMessage.OpenSnackbar, () => {

@@ -3,6 +3,7 @@
   import sparkleIcon from "../icons/sparkle.svg?raw";
   import ActiveDownloadsSections from "./ActiveDownloadsSections.svelte";
   import RecentDownloadsSection from "./recent/RecentDownloadsSection.svelte";
+  import ThisVideoSection from "./ThisVideoSection.svelte";
   import { deleteRecentDownload } from "@/lib/storage/recent-downloads-db";
   import { ProgressType } from "@/types";
   import type { DownloadProgressEntry, RecentDownloadEntry, VideoDetail, VideoQueueItem } from "@/types";
@@ -122,9 +123,11 @@
       {@html sparkleIcon}
       Tip: pick formats, quality &amp; languages in Settings
     </div>
+    <ThisVideoSection {currentSourceUrl} {currentTabId} {videoDetails} />
   </section>
 {:else}
   <div class="download-sections">
+    <ThisVideoSection {currentSourceUrl} {currentTabId} {videoDetails} />
     {#if totalActiveDownloads > 0}
       <div class="dl-banner" role="status">
         <span class="dl-banner-spinner" aria-hidden="true"></span>

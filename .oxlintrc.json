@@ -75,6 +75,7 @@
     "scripts/dump-*",
     "scripts/cdp-*",
     "scripts/screenshot-*",
+    "scripts/harness-*",
     "src/layers/processing/entrypoints/mux-worker/opfs.d.ts"
   ]
 }

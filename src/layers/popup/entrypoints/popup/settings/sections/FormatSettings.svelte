@@ -12,8 +12,38 @@
     buildFormatGroups,
     videoContainers
   } from "@/lib/utils/containers";
+  import { AudioCodecPreference, type AudioCodecPreference as AudioCodecPreferenceType } from "@/types";
 
   const { options, slideDuration }: SlidingSettingsProps = $props();
+
+  const audioCodecItems = [
+    {
+      value: AudioCodecPreference.Opus,
+      label: "Prefer Opus",
+      description: "Best quality for the size — ideal with MKV"
+    },
+    {
+      value: AudioCodecPreference.Aac,
+      label: "Prefer AAC",
+      description: "Widest compatibility: phones, TVs and editors"
+    },
+    {
+      value: AudioCodecPreference.Auto,
+      label: "Automatic",
+      description: "Highest bitrate available, any codec"
+    }
+  ];
+
+  function audioCodecLabel(preference: AudioCodecPreferenceType): string {
+    return audioCodecItems.find(item => item.value === preference)?.label ?? "Prefer Opus";
+  }
+
+  function selectAudioCodec(preference: AudioCodecPreferenceType): void {
+    void setOption({
+      key: "audioCodecPreference",
+      value: preference
+    });
+  }
 
   function shortLabel(extension: string): string {
     return extension === AUTO_EXTENSION ? AUTO_EXTENSION_LABEL : extension.toUpperCase();
@@ -92,6 +122,20 @@
     onSelect={selectAudio}
     {slideDuration}
     subtitle="Used for audio-only downloads"
+  >
+    {#snippet icon()}
+      {@html audioIcon}
+    {/snippet}
+  </SettingsDropDown>
+
+  <SettingsDropDown
+    currentValue={options.audioCodecPreference}
+    displayValue={audioCodecLabel(options.audioCodecPreference)}
+    items={audioCodecItems}
+    label="Audio codec"
+    onSelect={selectAudioCodec}
+    {slideDuration}
+    subtitle="Which audio track to pick when several are available"
   >
     {#snippet icon()}
       {@html audioIcon}

@@ -4,6 +4,7 @@ import { performCancelDownload } from "@/lib/ui/cancel-download";
 import { CONTENT_OPTIONS } from "@/lib/ui/synced-stores.svelte";
 import { resolveVideoFilename } from "@/lib/utils/containers";
 import { filterVideoFormatsByEnhancedBitrate } from "@/lib/youtube/format-display";
+import { pickPreferredAudioFormat } from "@/lib/youtube/select-audio-format";
 import { DownloadType, type Prettify, type VideoData } from "@/types";
 import { cancelStreamTransfer } from "#youtube/entrypoints/youtube.content/download/stream-transfer";
 import { checkedPlaylistVideos } from "#youtube/lib/ui/playlist-selection.svelte";
@@ -35,7 +36,7 @@ export function triggerDownload({ videoData, videoId, gridTitle, setLocallyDone 
     type: downloadType,
     videoId,
     videoItag: videoCandidates[0]?.itag ?? 0,
-    audioItag: videoData.audioFormats[0]?.itag ?? 0,
+    audioItag: pickPreferredAudioFormat(videoData.audioFormats, CONTENT_OPTIONS.audioCodecPreference)?.itag ?? 0,
     filenameOutput,
     downloadExtras: options.downloadExtras,
     includeAutoDubbing: options.includeAutoDubbing
