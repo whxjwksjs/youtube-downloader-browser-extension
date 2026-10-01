@@ -1,9 +1,11 @@
 import { normalizeLanguageCode, findOriginalAudioFormat } from "./audio-format-helpers";
 import { isAudioMimeNativeForContainer } from "@/lib/utils/containers";
-import { AudioTrackLanguageMode } from "@/types";
+import { AudioCodecPreference, AudioTrackLanguageMode } from "@/types";
 import type { AdaptiveFormatItem, Prettify } from "@/types";
 
 const FALLBACK_LANGUAGE_CODE = "en";
+const OPUS_CODEC_KEYWORD = "opus";
+const AAC_CODEC_KEYWORD = "mp4";
 
 type MatchAudioFormatToLanguageParams = Prettify<{
   audioFormats: AdaptiveFormatItem[];
@@ -21,10 +23,52 @@ function prependMatch({ audioFormats, match }: PrependMatchParams) {
   return match ? [match, ...audioFormats.filter(format => format !== match)] : [];
 }
 
+function matchesCodecPreference(format: AdaptiveFormatItem, codecPreference: AudioCodecPreference) {
+  const mimeType = format.mimeType.toLowerCase();
+  if (codecPreference === AudioCodecPreference.Opus) {
+    return mimeType.includes(OPUS_CODEC_KEYWORD);
+  }
+
+  if (codecPreference === AudioCodecPreference.Aac) {
+    return mimeType.includes(AAC_CODEC_KEYWORD);
+  }
+
+  return true;
+}
+
+// Default audio pick used wherever the code previously grabbed `audioFormats[0]`:
+// honors the user's codec preference, then falls back to the highest bitrate.
+export function pickPreferredAudioFormat(
+  audioFormats: AdaptiveFormatItem[],
+  codecPreference: AudioCodecPreference = AudioCodecPreference.Opus
+) {
+  const preferred = audioFormats.filter(format => matchesCodecPreference(format, codecPreference));
+  const candidates = preferred.length ? preferred : audioFormats;
+  return pickBestByBitrate(candidates);
+}
+
+function orderByCodecPreference(
+  audioFormats: AdaptiveFormatItem[],
+  codecPreference: AudioCodecPreference
+) {
+  if (codecPreference === AudioCodecPreference.Auto) {
+    return audioFormats;
+  }
+
+  const preferred = audioFormats.filter(format => matchesCodecPreference(format, codecPreference));
+  if (!preferred.length) {
+    return audioFormats;
+  }
+
+  const preferredSet = new Set(preferred);
+  return [...preferred, ...audioFormats.filter(format => !preferredSet.has(format))];
+}
+
 type SelectPreferredAudioFormatParams = Prettify<{
   audioFormats: AdaptiveFormatItem[];
   videoMimeType: string;
   languageMode: AudioTrackLanguageMode;
+  codecPreference?: AudioCodecPreference;
   locale: string;
   browserLanguage?: string;
   customLanguage?: string;
@@ -33,6 +77,7 @@ export function selectPreferredAudioFormat({
   audioFormats,
   videoMimeType,
   languageMode,
+  codecPreference = AudioCodecPreference.Opus,
   locale,
   browserLanguage,
   customLanguage
@@ -98,11 +143,12 @@ export function selectPreferredAudioFormat({
     }) : audioFormats;
   }
 
+  const orderedCandidates = orderByCodecPreference(candidates, codecPreference);
   if (isWebm) {
-    return candidates.find(format => format.mimeType.includes("webm")) ?? candidates[0] ?? null;
+    return orderedCandidates.find(format => format.mimeType.includes("webm")) ?? orderedCandidates[0] ?? null;
   }
 
-  return candidates[0] ?? null;
+  return orderedCandidates[0] ?? null;
 }
 
 function pickBestByBitrate(formats: AdaptiveFormatItem[]) {

@@ -75,7 +75,8 @@ export async function processVideoAudio({ item, isCancelled }: ProcessVideoAudio
         videoId,
         tabId,
         defaultAudioTrackIndex: defaultAudioTrackIndex ?? 0,
-        filenameOutput
+        filenameOutput,
+        thumbnailUrl: item.metadata?.thumbnailUrl
       }
     });
   } finally {

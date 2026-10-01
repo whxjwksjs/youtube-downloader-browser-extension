@@ -18,7 +18,7 @@ import { forwardSabrCredentialsWithRetry, listenForSabrBodyReady } from "#youtub
 const YTDL_IFRAME_QUERY_PARAM = "ytdl=1";
 
 export default defineContentScript({
-  matches: ["https://www.youtube.com/*"],
+  matches: ["https://www.youtube.com/*", "https://m.youtube.com/*"],
   allFrames: true,
   async main(context) {
     const isDownloadIframe = self !== top && location.search.includes(YTDL_IFRAME_QUERY_PARAM);

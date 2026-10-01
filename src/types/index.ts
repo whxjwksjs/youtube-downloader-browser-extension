@@ -28,9 +28,11 @@ export {
 } from "./youtube";
 
 export {
+  AudioCodecPreference,
   AudioTrackLanguageMode,
   CaptionLanguageMode,
   DownloadType,
+  FilenameTemplate,
   PlaylistDownloadMode,
   PlaylistOutputMode,
   ProgressType,

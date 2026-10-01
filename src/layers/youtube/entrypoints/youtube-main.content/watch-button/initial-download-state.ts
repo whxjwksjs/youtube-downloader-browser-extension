@@ -4,7 +4,8 @@ import {
   MULTI_TRACK_UNSUPPORTED_EXTENSIONS,
   getCompatibleFilename,
   getOutputExtension,
-  resolveAutoExtension
+  resolveAutoExtension,
+  resolveFilenameBasename
 } from "@/lib/utils/containers";
 import { selectPreferredAudioFormat } from "@/lib/youtube/video-helpers";
 import { DownloadType, type VideoData } from "@/types";
@@ -23,6 +24,7 @@ function getPreferredAudioFormat(videoData: VideoData) {
     audioFormats: videoData.audioFormats,
     videoMimeType: videoMime,
     languageMode: options.audioTrackLanguageMode,
+    codecPreference: options.audioCodecPreference,
     locale: document.documentElement.lang,
     browserLanguage: navigator.language,
     customLanguage: options.customLanguage
@@ -81,7 +83,11 @@ function resolveInitialItags(videoData: VideoData, preferredAudio: PreferredAudi
 export function buildInitialDownloadState(videoData: VideoData) {
   const preferredAudio = getPreferredAudioFormat(videoData);
   const extension = resolveOutputExtension(videoData, preferredAudio);
-  const filename = getCompatibleFilename(`${videoData.title || videoData.videoId}.${extension}`);
+  const basename = resolveFilenameBasename({
+    videoData,
+    template: CONTENT_OPTIONS.filenameTemplate
+  });
+  const filename = getCompatibleFilename(`${basename || videoData.videoId}.${extension}`);
   const downloadType = videoData.isMusic ? DownloadType.Audio : DownloadType.VideoAndAudio;
 
   return {

@@ -1,3 +1,8 @@
+import {
+  cleanupMobileDownloadButton,
+  isMobileYouTube,
+  mountMobileDownloadButton
+} from "../watch-button/mobile-download-button";
 import { injectSegmentedDownloadButton } from "../watch-button/watch-button";
 import { generatePoTokenIfNeeded, readYtcfg, videoDataCache } from "./video-data";
 import { buildVideoData } from "./youtube-api";
@@ -102,7 +107,13 @@ export async function buildAndDispatchVideoData({ playerResponse }: {
 
   const isWatchPage = location.pathname === WATCH_PATHNAME;
   if (isWatchPage) {
-    await injectSegmentedDownloadButton(videoData);
+    cleanupMobileDownloadButton();
+
+    if (isMobileYouTube()) {
+      mountMobileDownloadButton(videoData);
+    } else {
+      await injectSegmentedDownloadButton(videoData);
+    }
   }
 }
 

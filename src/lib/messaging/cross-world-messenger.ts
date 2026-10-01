@@ -38,7 +38,8 @@ export const CrossWorldMessage = {
   ButtonClick: "buttonClick",
   DownloadBlobUrl: "downloadBlobUrl",
   ReportPageProgress: "reportPageProgress",
-  ReportMainDownloadFailed: "reportMainDownloadFailed"
+  ReportMainDownloadFailed: "reportMainDownloadFailed",
+  RequestPageDownload: "requestPageDownload"
 } as const;
 
 export interface PageMessengerSchema {
@@ -134,6 +135,7 @@ export interface PageMessengerSchema {
     videoId: string;
     isUnavailable?: boolean;
   }): void;
+  [CrossWorldMessage.RequestPageDownload](data: { videoId: string }): void;
 }
 
 export type StreamDataPayload = Prettify<Parameters<PageMessengerSchema[typeof CrossWorldMessage.StreamData]>[0]>;

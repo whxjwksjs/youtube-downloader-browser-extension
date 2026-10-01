@@ -1,7 +1,9 @@
 import type {
+  AudioCodecPreference,
   AudioTrackLanguageMode,
   CaptionLanguageMode,
   DownloadType,
+  FilenameTemplate,
   PlaylistDownloadMode,
   PlaylistOutputMode,
   VideoQualityMode
@@ -58,6 +60,8 @@ export type Options = Prettify<{
   playlistAudioOutputMode: PlaylistOutputMode;
   isPlaylistScrollSyncEnabled: boolean;
   audioTrackLanguageMode: AudioTrackLanguageMode;
+  audioCodecPreference: AudioCodecPreference;
+  filenameTemplate: FilenameTemplate;
   captionLanguageMode: CaptionLanguageMode;
   customLanguage: string;
   downloadExtras: boolean;

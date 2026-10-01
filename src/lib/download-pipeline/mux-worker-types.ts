@@ -37,6 +37,7 @@ export type MuxVideoAudioJob = Prettify<BaseWorkerJob & {
   videoMimeType: string;
   audioMimeType: string;
   defaultAudioTrackIndex: number;
+  thumbnailUrl?: string;
 }>;
 
 export type EmbedMetadataJob = Prettify<BaseWorkerJob & {

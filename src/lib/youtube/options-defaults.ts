@@ -1,8 +1,10 @@
 import { AUTO_EXTENSION } from "@/lib/utils/containers";
 import {
+  AudioCodecPreference,
   AudioTrackLanguageMode,
   CaptionLanguageMode,
   DownloadType,
+  FilenameTemplate,
   PlaylistDownloadMode,
   PlaylistOutputMode,
   VideoQualityMode
@@ -32,6 +34,8 @@ export const INITIAL_OPTIONS: Options = {
   playlistAudioOutputMode: PlaylistOutputMode.Zip,
   isPlaylistScrollSyncEnabled: false,
   audioTrackLanguageMode: AudioTrackLanguageMode.MatchVideo,
+  audioCodecPreference: AudioCodecPreference.Opus,
+  filenameTemplate: FilenameTemplate.Title,
   captionLanguageMode: CaptionLanguageMode.SameAsAudio,
   customLanguage: DEFAULT_CUSTOM_LANGUAGE,
   downloadExtras: true,

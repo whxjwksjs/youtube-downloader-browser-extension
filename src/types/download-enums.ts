@@ -56,3 +56,20 @@ export const CaptionLanguageMode = {
 } as const;
 
 export type CaptionLanguageMode = (typeof CaptionLanguageMode)[keyof typeof CaptionLanguageMode];
+
+export const AudioCodecPreference = {
+  Opus: "opus",
+  Aac: "aac",
+  Auto: "auto"
+} as const;
+
+export type AudioCodecPreference = (typeof AudioCodecPreference)[keyof typeof AudioCodecPreference];
+
+export const FilenameTemplate = {
+  Title: "title",
+  UploaderTitle: "uploader-title",
+  TitleId: "title-id",
+  UploaderTitleId: "uploader-title-id"
+} as const;
+
+export type FilenameTemplate = (typeof FilenameTemplate)[keyof typeof FilenameTemplate];

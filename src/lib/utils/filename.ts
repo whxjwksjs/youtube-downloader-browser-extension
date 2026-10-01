@@ -1,5 +1,6 @@
 import { getOutputExtension } from "./container-specs";
 import { resolveAutoExtension } from "./mime-types";
+import { FilenameTemplate } from "@/types";
 import type { Options, VideoData } from "@/types";
 
 export function getCompatibleFilename(filename: string) {
@@ -36,6 +37,31 @@ export function splitFilenameAndExtension(filename: string) {
   };
 }
 
+export function resolveFilenameBasename({ videoData, template, titleOverride }: {
+  videoData: Pick<VideoData, "title" | "videoId" | "playerResponse">;
+  template: FilenameTemplate;
+  titleOverride?: string;
+}) {
+  const rawTitle = (titleOverride || videoData.title || "").trim();
+  const title = hasVisibleContent(getCompatibleFilename(rawTitle))
+    ? getCompatibleFilename(rawTitle).trim()
+    : videoData.videoId;
+  const author = (videoData.playerResponse.videoDetails?.author || "").trim();
+  const videoIdSuffix = `[${videoData.videoId}]`;
+
+  switch (template) {
+    case FilenameTemplate.UploaderTitle:
+      return author ? `${author} - ${title}` : title;
+    case FilenameTemplate.TitleId:
+      return `${title} ${videoIdSuffix}`;
+    case FilenameTemplate.UploaderTitleId:
+      return author ? `${author} - ${title} ${videoIdSuffix}` : `${title} ${videoIdSuffix}`;
+    case FilenameTemplate.Title:
+    default:
+      return title;
+  }
+}
+
 export function resolveVideoFilename({ videoData, options, titleOverride }: {
   videoData: VideoData;
   options: Options;
@@ -57,7 +83,11 @@ export function resolveVideoFilename({ videoData, options, titleOverride }: {
       userExtension: resolvedExtension
     })
     : resolvedExtension;
-  const rawTitle = titleOverride || videoData.title;
+  const rawTitle = resolveFilenameBasename({
+    videoData,
+    template: options.filenameTemplate,
+    titleOverride
+  });
   const sanitized = getCompatibleFilename(rawTitle).trim();
   const title = hasVisibleContent(sanitized) ? sanitized : videoData.videoId;
   return `${title}.${outputExtension}`;

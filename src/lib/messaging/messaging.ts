@@ -43,7 +43,8 @@ export const MessageType = {
   ReportWorkerDownloadFailed: "reportWorkerDownloadFailed",
   ForwardProgressUpdate: "forwardProgressUpdate",
   ReportPageProgress: "reportPageProgress",
-  PageSabrFetch: "pageSabrFetch"
+  PageSabrFetch: "pageSabrFetch",
+  RequestPageDownload: "requestPageDownload"
 } as const;
 
 export type PageSabrFetchRequest = Prettify<{
@@ -197,6 +198,10 @@ export interface ProtocolMap {
   }): void;
 
   startBackgroundDownload(data: DownloadRequest): void;
+
+  requestPageDownload(data: {
+    videoId: string;
+  }): void;
 
   startKeepalive(data: {
     videoId: string;
