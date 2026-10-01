@@ -45,7 +45,7 @@ export default defineConfig({
   }),
   modules: ["@wxt-dev/module-svelte", "wxt-module-layers"],
   layers: {
-    sources: ["layers/background", "layers/popup", "layers/processing", "layers/youtube"]
+    sources: ["src/layers/background", "src/layers/popup", "src/layers/processing", "src/layers/youtube"]
   },
   manifestVersion: 3,
   manifest: ({ browser }) => ({
