@@ -1,5 +1,6 @@
 import type { EmbedMetadataJob, MuxVideoAudioJob, TranscodeAudioJob, TranscodeFileJob } from "./mux-worker-types";
 import { WorkerMessageType } from "./mux-worker-types";
+import type { DiagnosticLogLevel } from "@/lib/diagnostics/diagnostic-log";
 import type { ProgressType } from "@/types";
 
 export type WorkerCommandMap = {
@@ -18,6 +19,11 @@ export type WorkerDataResponseMap = {
     progress: number;
     progressType: ProgressType;
     tabId: number;
+  };
+  [WorkerMessageType.Log]: {
+    level: DiagnosticLogLevel;
+    tag: string;
+    message: string;
   };
 };
 

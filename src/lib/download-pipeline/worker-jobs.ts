@@ -2,6 +2,7 @@ import { enqueueMuxJob } from "./mux-queue";
 import type { EmbedMetadataJob, MuxVideoAudioJob, TranscodeAudioJob, TranscodeFileJob } from "./mux-worker-types";
 import { WorkerMessageType } from "./mux-worker-types";
 import type { HostWorkerPort } from "./worker-port-host";
+import { logDiag } from "@/lib/diagnostics/diagnostic-log";
 import { MessageType, sendMessage } from "@/lib/messaging/messaging";
 import type { Prettify } from "@/types";
 
@@ -49,6 +50,9 @@ export function runWorkerJob<T>({
           progressType,
           tabId
         }).catch(() => {});
+      },
+      [WorkerMessageType.Log]({ level, tag, message }) {
+        logDiag(level, tag, message);
       }
     });
 
@@ -99,6 +103,9 @@ export function runMuxVideoAudio({ videoId, job }: RunMuxVideoAudioParams) {
               progressType,
               tabId
             }).catch(() => {});
+          },
+          [WorkerMessageType.Log]({ level, tag, message }) {
+            logDiag(level, tag, message);
           }
         });
 

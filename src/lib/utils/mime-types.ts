@@ -1,3 +1,4 @@
+import { extractBaseCodec } from "./container-specs";
 import { getFileExtension } from "./filename";
 
 const MIME_AUDIO_AIFF = "audio/aiff";
@@ -121,7 +122,39 @@ export const supportedExtensions = {
   audio: [AUTO_EXTENSION, ...audioContainers]
 };
 
-const WEBM_AUDIO_EXTENSIONS = new Set([EXT_WEBM, "weba"]);
+// Natural container for each audio codec, so "auto" keeps the stream in a
+// compatible container instead of forcing everything into M4A (which would
+// needlessly transcode e.g. Opus into AAC).
+const CODEC_TO_AUDIO_EXTENSION: Record<string, string> = {
+  opus: "opus",
+  vorbis: "ogg",
+  mp4a: EXT_M4A,
+  aac: EXT_M4A,
+  mp3: "mp3",
+  flac: "flac",
+  ac3: EXT_M4A,
+  ec3: EXT_M4A,
+  pcm_s16le: "wav",
+  pcm_s16be: "aiff"
+};
+
+// YouTube sometimes serves audio with no codecs= parameter (e.g. plain
+// "audio/mpeg"); infer the container from the MIME type in that case.
+const MIME_TO_AUDIO_EXTENSION: Record<string, string> = {
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/mp4": EXT_M4A,
+  "audio/x-m4a": EXT_M4A,
+  "audio/aac": EXT_M4A,
+  "audio/ogg": "ogg",
+  "audio/opus": "opus",
+  "audio/webm": "opus",
+  "audio/flac": "flac",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+  "audio/aiff": "aiff",
+  "audio/x-aiff": "aiff"
+};
 
 export function resolveAutoExtension({ extension, mimeType, isAudio = false }: {
   extension: string;
@@ -130,8 +163,18 @@ export function resolveAutoExtension({ extension, mimeType, isAudio = false }: {
 }) {
   const isAuto = extension === AUTO_EXTENSION;
   if (isAudio) {
-    const isWebmAudioTarget = isAuto || WEBM_AUDIO_EXTENSIONS.has(extension);
-    return isWebmAudioTarget ? EXT_M4A : extension;
+    if (!isAuto) {
+      return extension;
+    }
+
+    const codec = extractBaseCodec(mimeType);
+    const byCodec = CODEC_TO_AUDIO_EXTENSION[codec];
+    if (byCodec) {
+      return byCodec;
+    }
+
+    const mimeBase = mimeType.split(";")[0]?.trim().toLowerCase() ?? "";
+    return MIME_TO_AUDIO_EXTENSION[mimeBase] ?? EXT_M4A;
   }
 
   if (!isAuto) {

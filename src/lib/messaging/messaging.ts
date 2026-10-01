@@ -1,4 +1,5 @@
 import type {
+  DiagnosticLogEntry,
   DownloadRequest,
   DownloadType,
   Prettify,
@@ -44,7 +45,11 @@ export const MessageType = {
   ForwardProgressUpdate: "forwardProgressUpdate",
   ReportPageProgress: "reportPageProgress",
   PageSabrFetch: "pageSabrFetch",
-  RequestPageDownload: "requestPageDownload"
+  RequestPageDownload: "requestPageDownload",
+  RequestVideoDataRefresh: "requestVideoDataRefresh",
+  ReportDiagnosticLog: "reportDiagnosticLog",
+  GetDiagnosticLog: "getDiagnosticLog",
+  ClearDiagnosticLog: "clearDiagnosticLog"
 } as const;
 
 export type PageSabrFetchRequest = Prettify<{
@@ -203,6 +208,8 @@ export interface ProtocolMap {
     videoId: string;
   }): void;
 
+  requestVideoDataRefresh(): void;
+
   startKeepalive(data: {
     videoId: string;
   }): void;
@@ -288,6 +295,14 @@ export interface ProtocolMap {
   }): void;
 
   pageSabrFetch(data: PageSabrFetchRequest): PageSabrFetchResponse;
+
+  reportDiagnosticLog(data: {
+    entry: DiagnosticLogEntry;
+  }): void;
+
+  getDiagnosticLog(): DiagnosticLogEntry[];
+
+  clearDiagnosticLog(): void;
 }
 
 export const { sendMessage, onMessage } =
