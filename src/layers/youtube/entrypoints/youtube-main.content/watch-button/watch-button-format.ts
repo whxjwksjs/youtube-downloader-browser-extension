@@ -1,11 +1,23 @@
 import type { ButtonViewState } from "./watch-button-types";
-import { ProgressType } from "@/types";
+import { DownloadType, ProgressType } from "@/types";
 
 export type { ButtonViewState } from "./watch-button-types";
 
+function describeDownloadType(downloadType: DownloadType) {
+  if (downloadType === DownloadType.Audio) {
+    return "audio";
+  }
+
+  if (downloadType === DownloadType.Video) {
+    return "video only";
+  }
+
+  return "video + audio";
+}
+
 export function buildDownloadTitle(state: ButtonViewState) {
   const {
-    isDone, isDownloading, isError, isUnavailable, isInterrupted, isDownloadable, downloadProgress, progressType
+    isDone, isDownloading, isError, isUnavailable, isInterrupted, isDownloadable, downloadProgress, progressType, downloadType
   } = state;
   const isProcessing = isDownloading && progressType === ProgressType.FFmpeg;
   if (!isDownloadable) {
@@ -57,16 +69,17 @@ export function buildDownloadTitle(state: ButtonViewState) {
     };
   }
 
+  const typeLabel = describeDownloadType(downloadType);
   return {
-    title: "Download",
-    accessibilityText: "Download"
+    title: `Download ${typeLabel}`,
+    accessibilityText: `Download ${typeLabel}`
   };
 }
 
 export function buildDownloadTooltip(state: ButtonViewState) {
   const {
     isDone, isDownloading, isError, isUnavailable, isInterrupted, isDownloadable, isProgressNonZero,
-    downloadProgress, progressType, filename, quality
+    downloadProgress, progressType, filename, quality, downloadType
   } = state;
   if (!isDownloadable) {
     return "";
@@ -107,5 +120,5 @@ export function buildDownloadTooltip(state: ButtonViewState) {
     return `${base} - ${downloadProgress} downloaded`;
   }
 
-  return base;
+  return `${base} - ${describeDownloadType(downloadType)}`;
 }

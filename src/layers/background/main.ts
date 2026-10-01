@@ -4,6 +4,8 @@ import { registerPipelineHandlers } from "./handlers/pipeline-handlers";
 import { ensureProcessor } from "./handlers/processor";
 import { registerStorageHandlers } from "./handlers/storage-handlers";
 import { registerTabLifecycleHandlers } from "./handlers/tab-lifecycle";
+import { registerDiagnosticLogHandlers } from "./diagnostics/diagnostic-log-store";
+import { registerFilenameGuard } from "./download/filename-guard";
 import { registerRecentDownloadsRetention } from "./recent/recent-downloads";
 import { MessageType, sendMessageToTab } from "@/lib/messaging/messaging";
 import { initOffscreenPortListener } from "@/lib/messaging/offscreen-messaging";
@@ -22,6 +24,8 @@ import { onSabrBodyCaptured, startSabrRequestCapture } from "#background/lib/you
 
 export function main() {
   initOffscreenPortListener();
+  registerDiagnosticLogHandlers();
+  registerFilenameGuard();
   registerCdnOriginRule().catch(error => console.error("Failed to register the CDN origin rule", error));
   startSabrRequestCapture();
   onSabrBodyCaptured(tabId => {

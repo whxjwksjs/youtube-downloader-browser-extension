@@ -8,6 +8,7 @@ import {
 } from "../download/background-downloader";
 import { reportVideoUnavailable } from "../download/download-failure-reporter";
 import { tryDirectUrlDownload } from "../download/download-fallback-chain";
+import { rememberDownloadFilename } from "../download/filename-guard";
 import { downloadViaWatchPage, initIframeReadyListener } from "../download/iframe-downloader";
 import { clearIframeAutoRetry, handleIframeFallback } from "../download/sabr-attempt";
 import { enqueueToPopupList, removeFromPopupList } from "../queue/popup-list";
@@ -112,6 +113,7 @@ export function registerDownloadHandlers() {
     const { blobUrl, filename, videoId } = data;
     const tabId = getTabIdsForVideo(videoId)[0] ?? -1;
     try {
+      rememberDownloadFilename(blobUrl, filename);
       const downloadId = await browser.downloads.download({
         url: blobUrl,
         filename

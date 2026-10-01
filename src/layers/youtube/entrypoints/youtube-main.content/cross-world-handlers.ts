@@ -1,7 +1,7 @@
 import { registerButtonDataHandler } from "./button-data-handler";
 import "./cta-button.css";
 import { cancelActiveDownload, startDownload } from "./video/download";
-import { videoDataCache } from "./video/video-data";
+import { extractAndDispatchVideoData, videoDataCache } from "./video/video-data";
 import { buildInitialDownloadState } from "./watch-button/initial-download-state";
 import { CrossWorldMessage, crossWorldMessenger, dispatchButtonClick } from "@/lib/messaging/cross-world-messenger";
 import {
@@ -36,6 +36,12 @@ export function registerCrossWorldHandlers() {
       audioTrackId: state.audioTrackId,
       filenameOutput: state.filename
     }).catch(() => {});
+  });
+
+  crossWorldMessenger.onMessage(CrossWorldMessage.RefreshVideoData, () => {
+    // Re-run extraction and re-dispatch: covers the case where the popup
+    // opened before (or while) video-data capture was still in flight.
+    extractAndDispatchVideoData().catch(() => {});
   });
 
   crossWorldMessenger.onMessage(CrossWorldMessage.OpenSnackbar, () => {

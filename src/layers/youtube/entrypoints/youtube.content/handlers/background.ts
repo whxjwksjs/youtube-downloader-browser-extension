@@ -17,6 +17,10 @@ export function registerBackgroundMessageHandlers() {
     crossWorldMessenger.sendMessage(CrossWorldMessage.RequestPageDownload, data).catch(() => {});
   });
 
+  onMessage(MessageType.RequestVideoDataRefresh, () => {
+    crossWorldMessenger.sendMessage(CrossWorldMessage.RefreshVideoData).catch(() => {});
+  });
+
   // Progress, failure, and cancel state all flow through statusProgressItem
   // (chrome.storage.local) and reach the UI via statusProgressSignal. The
   // in-tab message handles only the interrupted-download lifecycle hook.

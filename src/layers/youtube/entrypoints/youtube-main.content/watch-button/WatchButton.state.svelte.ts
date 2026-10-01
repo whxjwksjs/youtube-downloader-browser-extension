@@ -75,7 +75,8 @@ export function createWatchButtonState(params: {
     progressType: downloadProgressType,
     filename: defaultFilename,
     quality: defaultQuality,
-    isDownloadable: params.videoData.isDownloadable
+    isDownloadable: params.videoData.isDownloadable,
+    downloadType: defaultDownloadType
   });
 
   const downloadData = $derived(buildDownloadData(viewState));

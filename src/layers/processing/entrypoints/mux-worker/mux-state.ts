@@ -1,6 +1,7 @@
 import { WorkerMessageType } from "@/lib/download-pipeline/mux-worker-types";
 import { createWorkerPortReceiver } from "@/lib/download-pipeline/worker-port-receiver";
 import type { WorkerPortReceiver } from "@/lib/download-pipeline/worker-port-receiver";
+import type { DiagnosticLogLevel } from "@/lib/diagnostics/diagnostic-log";
 import { ProgressType } from "@/types";
 import type { Prettify } from "@/types";
 import type { FFmpegCoreModule } from "@ffmpeg/types";
@@ -112,6 +113,10 @@ export function trackFFmpegProgressFromLog(message: string) {
   if (timeTimecode) {
     reportLogProgress(timeTimecode);
   }
+}
+
+export function postWorkerLog(level: DiagnosticLogLevel, tag: string, message: string) {
+  state.portReceiver?.send(WorkerMessageType.Log, { level, tag, message });
 }
 
 export function postResult(data: Uint8Array | null) {

@@ -6,7 +6,6 @@ import {
   parseMusicTitle
 } from "./music-metadata";
 import { sabrCredentials } from "@/lib/ui/synced-stores.svelte";
-import { fetchMusicThumbnailUrl } from "@/lib/youtube/youtube-music-metadata";
 import { type VideoData } from "@/types";
 import { generatePoToken } from "#youtube/lib/youtube/po-token-generator";
 import { getYtcfg, YtcfgKey } from "#youtube/lib/youtube/ytcfg";
@@ -48,8 +47,6 @@ export async function buildVideoMetadata(videoId: string) {
   const isGenresPresent = genres.length > 0;
 
   const youtubeThumbnailUrl = videoDetails?.thumbnail?.thumbnails?.at(-1)?.url;
-  const searchQuery = `${artist} ${title}`.trim();
-  const musicThumbnailUrl = cached.isMusic ? await fetchMusicThumbnailUrl(searchQuery) : undefined;
 
   return {
     title,
@@ -58,7 +55,7 @@ export async function buildVideoMetadata(videoId: string) {
     album: descriptionMeta?.album,
     genres: isGenresPresent ? genres : undefined,
     date: renderer?.publishDate,
-    thumbnailUrl: musicThumbnailUrl ?? youtubeThumbnailUrl,
+    thumbnailUrl: youtubeThumbnailUrl,
     isMusic: cached.isMusic
   };
 }

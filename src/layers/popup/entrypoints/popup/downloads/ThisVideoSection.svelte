@@ -10,6 +10,10 @@
 
   const { videoDetails, currentTabId, currentSourceUrl }: Props = $props();
 
+  const MAX_REFRESH_ATTEMPTS = 3;
+  let refreshAttempts = $state(0);
+  let gaveUp = $state(false);
+
   function extractVideoId(url: string): string | null {
     try {
       const parsed = new URL(url);
@@ -35,6 +39,28 @@
   const videoId = $derived(currentSourceUrl ? extractVideoId(currentSourceUrl) : null);
   const detail = $derived(videoId ? videoDetails[videoId] : undefined);
 
+  // The popup can open while the tab's video-data capture is still in
+  // flight. Ask the tab to re-run extraction and re-dispatch its data
+  // instead of silently hiding the section.
+  $effect(() => {
+    if (!videoId || detail || gaveUp || refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+      return;
+    }
+
+    const attempt = refreshAttempts + 1;
+    const timer = setTimeout(() => {
+      refreshAttempts = attempt;
+      if (currentTabId !== undefined) {
+        sendMessageToTab(MessageType.RequestVideoDataRefresh, undefined, currentTabId).catch(() => {});
+      }
+
+      if (attempt >= MAX_REFRESH_ATTEMPTS) {
+        gaveUp = true;
+      }
+    }, 900 * attempt);
+    return () => clearTimeout(timer);
+  });
+
   async function handleDownload(): Promise<void> {
     if (!videoId || currentTabId === undefined) {
       return;
@@ -42,20 +68,40 @@
 
     await sendMessageToTab(MessageType.RequestPageDownload, { videoId }, currentTabId).catch(() => {});
   }
+
+  async function handleRetry(): Promise<void> {
+    refreshAttempts = 0;
+    gaveUp = false;
+  }
 </script>
 
-{#if detail && videoId}
+{#if videoId}
   <section class="this-video">
-    <div class="this-video-info">
-      <span class="this-video-label">This video</span>
-      <span class="this-video-title">{detail.title || videoId}</span>
-      {#if detail.channel}
-        <span class="this-video-channel">{detail.channel}</span>
-      {/if}
-    </div>
-    <button class="this-video-button" onclick={handleDownload} type="button">
-      Download
-    </button>
+    {#if detail}
+      <div class="this-video-info">
+        <span class="this-video-label">This video</span>
+        <span class="this-video-title">{detail.title || videoId}</span>
+        {#if detail.channel}
+          <span class="this-video-channel">{detail.channel}</span>
+        {/if}
+      </div>
+      <button class="this-video-button" onclick={handleDownload} type="button">
+        Download
+      </button>
+    {:else if gaveUp}
+      <div class="this-video-info">
+        <span class="this-video-label">This video</span>
+        <span class="this-video-title">Couldn't load video info</span>
+      </div>
+      <button class="this-video-button" onclick={handleRetry} type="button">
+        Retry
+      </button>
+    {:else}
+      <div class="this-video-info">
+        <span class="this-video-label">This video</span>
+        <span class="this-video-title">Loading video info…</span>
+      </div>
+    {/if}
   </section>
 {/if}
 

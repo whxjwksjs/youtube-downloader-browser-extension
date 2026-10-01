@@ -1,5 +1,7 @@
 import { downloadViaCdn } from "./cdn-downloader";
+import { rememberDownloadFilename } from "./filename-guard";
 import { attemptSabrDownload } from "./sabr-attempt";
+import { logDiag } from "@/lib/diagnostics/diagnostic-log";
 import { MessageType, sendMessageToTab } from "@/lib/messaging/messaging";
 import { getCompatibleFilename } from "@/lib/utils/filename";
 import { DownloadType, ProgressType } from "@/types";
@@ -72,14 +74,15 @@ export async function tryDirectUrlDownload({ request }: {
 
   try {
     const filename = getCompatibleFilename(filenameOutput);
+    rememberDownloadFilename(resolvedAudioUrl, filename);
     const downloadId = await browser.downloads.download({
       url: resolvedAudioUrl,
       filename
     });
-    console.warn("[ytdl:bg] Direct URL download started, id:", downloadId);
+    logDiag("info", "download", `Direct URL download started (id ${downloadId}), file ${filename}`);
     return downloadId;
   } catch (error) {
-    console.warn("[ytdl:bg] Direct URL download failed:", error);
+    logDiag("warn", "download", `Direct URL download failed for ${request.videoId}: ${String(error)}`);
     return null;
   }
 }

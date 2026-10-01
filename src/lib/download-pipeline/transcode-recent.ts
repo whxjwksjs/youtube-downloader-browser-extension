@@ -4,7 +4,6 @@ import { MessageType, sendMessage } from "@/lib/messaging/messaging";
 import { getRecentDownloadBlob, getAllRecentDownloads } from "@/lib/storage/recent-downloads-db";
 import type { RecentDownloadEntry } from "@/lib/storage/recent-downloads-db";
 import { audioContainers, splitFilenameAndExtension, videoContainers } from "@/lib/utils/containers";
-import { fetchMusicThumbnailUrl } from "@/lib/youtube/youtube-music-metadata";
 import { DownloadType } from "@/types";
 import type { Prettify } from "@/types";
 
@@ -15,10 +14,8 @@ type TranscodeRecentDownloadParams = Prettify<{
   targetContainer: string;
 }>;
 
-async function resolveCoverArtUrl(entry: RecentDownloadEntry) {
-  const searchQuery = `${entry.channel} ${entry.title}`.trim();
-  const musicUrl = await fetchMusicThumbnailUrl(searchQuery);
-  return musicUrl ?? entry.thumbnailUrl;
+function resolveCoverArtUrl(entry: RecentDownloadEntry) {
+  return entry.thumbnailUrl;
 }
 
 export async function transcodeRecentDownload({ entryId, targetContainer }: TranscodeRecentDownloadParams) {
@@ -42,7 +39,7 @@ export async function transcodeRecentDownload({ entryId, targetContainer }: Tran
 
     const downloadFilename = `${splitFilenameAndExtension(entry.filename).name}.${targetContainer}`;
     const isVideoToAudio = videoContainers.includes(entry.container) && audioContainers.includes(targetContainer);
-    const coverArtUrl = isVideoToAudio ? await resolveCoverArtUrl(entry) : undefined;
+    const coverArtUrl = isVideoToAudio ? resolveCoverArtUrl(entry) : undefined;
 
     const output = await runTranscodeFile({
       videoId: transcodeVideoId,

@@ -10,7 +10,8 @@ export enum WorkerMessageType {
   Result = "result",
   ResultFile = "resultFile",
   Error = "error",
-  Progress = "progress"
+  Progress = "progress",
+  Log = "log"
 }
 
 type BaseWorkerJob = Prettify<{

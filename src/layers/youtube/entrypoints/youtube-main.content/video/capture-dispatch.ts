@@ -5,6 +5,7 @@ import {
 } from "../watch-button/mobile-download-button";
 import { injectSegmentedDownloadButton } from "../watch-button/watch-button";
 import { generatePoTokenIfNeeded, readYtcfg, videoDataCache } from "./video-data";
+import { logDiag } from "@/lib/diagnostics/diagnostic-log";
 import { buildVideoData } from "./youtube-api";
 import { CrossWorldMessage, crossWorldMessenger } from "@/lib/messaging/cross-world-messenger";
 import { videoDataStore } from "@/lib/ui/synced-stores.svelte";
@@ -96,6 +97,8 @@ export async function buildAndDispatchVideoData({ playerResponse }: {
   }
 
   flushPendingChunks();
+
+  logDiag("info", "capture", `Video data dispatched for ${videoData.videoId} ("${videoData.title.slice(0, 60)}"): ${videoData.videoFormats.length} video, ${videoData.audioFormats.length} audio formats; mobile=${isMobileYouTube()}`);
 
   const isIframe = self !== top;
   if (isIframe) {

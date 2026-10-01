@@ -1,4 +1,5 @@
 import { ensureProcessor } from "../handlers/processor";
+import { rememberDownloadFilename } from "../download/filename-guard";
 import { enqueueToPopupList } from "../queue/popup-list";
 import { getTabIdsForVideo } from "../queue/tab-tracker";
 import { TRANSCODE_VIDEO_ID_PREFIX } from "@/lib/download-pipeline/transcode-recent";
@@ -217,6 +218,7 @@ export function notifyWatchTabsOnComplete({ downloadId, videoId, filename }: Not
 
 export function registerRecentDownloadHandlers() {
   onMessage(MessageType.PipelineDownload, async ({ data }) => {
+    rememberDownloadFilename(data.blobUrl, data.filename);
     const downloadId = await browser.downloads.download({
       url: data.blobUrl,
       filename: data.filename

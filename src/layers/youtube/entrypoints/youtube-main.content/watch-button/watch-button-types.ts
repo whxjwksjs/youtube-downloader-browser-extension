@@ -1,4 +1,4 @@
-import { ProgressType } from "@/types";
+import { DownloadType, ProgressType } from "@/types";
 import type { Prettify } from "@/types";
 
 export type ButtonViewState = Prettify<{
@@ -15,6 +15,7 @@ export type ButtonViewState = Prettify<{
   filename: string;
   quality: string;
   isDownloadable: boolean;
+  downloadType: DownloadType;
 }>;
 
 export const percentFormatter = new Intl.NumberFormat(document.documentElement.lang, {

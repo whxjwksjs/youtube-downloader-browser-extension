@@ -1,5 +1,6 @@
 import { toOwnedArrayBuffer, reportProgress } from ".";
 import { runEmbedMetadata, runTranscodeAudio } from "./ffmpeg-instance";
+import { logDiag } from "@/lib/diagnostics/diagnostic-log";
 import { ProgressType } from "@/types";
 import type { Prettify, VideoMetadata } from "@/types";
 
@@ -29,6 +30,7 @@ export async function applyAudioFfmpeg({
 }: ApplyAudioFfmpegParams) {
   const isWebmOutput = WEBM_AUDIO_OUTPUT_EXTENSIONS.has(outputExtension);
   const hasEmbeddableThumbnail = metadata != null && Boolean(metadata.thumbnailUrl) && !isWebmOutput;
+  logDiag("info", "audio-pipeline", `Audio ${videoId}: ${sourceExtension} -> ${outputExtension} (codec ${audioMimeType ?? "unknown"}), embed=${hasEmbeddableThumbnail}`);
   if (hasEmbeddableThumbnail) {
     await reportProgress({
       videoId,

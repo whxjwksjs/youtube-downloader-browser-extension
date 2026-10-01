@@ -1,4 +1,5 @@
 import { registerCrossWorldHandlers } from "./cross-world-handlers";
+import "./diagnostics/content-diagnostic-log";
 import { registerGridDropdownHandlers } from "./grid/grid-dropdown";
 import { registerGridTagger } from "./grid/grid-tagger";
 import { registerGridVideoDataHandler } from "./grid/grid-video-data";
@@ -7,6 +8,7 @@ import { setupAudioTrackWatcher, setupCaptionTrackWatcher } from "./player-watch
 import { cancelAllActiveDownloads } from "./video/download";
 import { extractPlaylistMetadata, handleNavigateSuccess } from "./video/playlist-metadata";
 import { extractAndDispatchVideoData } from "./video/video-data";
+import { ensureMobileDownloadButton, isMobileYouTube } from "./watch-button/mobile-download-button";
 import { CrossWorldMessage, crossWorldMessenger } from "@/lib/messaging/cross-world-messenger";
 import { initContentOptions } from "@/lib/ui/synced-stores.svelte";
 import type { PlayerResponse } from "@/types";
@@ -73,6 +75,11 @@ export default defineContentScript({
     document.addEventListener(EVENT_YT_NAVIGATE_FINISH, handleNavigateSuccess);
     document.addEventListener(EVENT_YT_NAVIGATE_FINISH, setupAudioTrackWatcher);
     document.addEventListener(EVENT_YT_NAVIGATE_FINISH, setupCaptionTrackWatcher);
+    document.addEventListener(EVENT_YT_NAVIGATE_FINISH, () => {
+      if (isMobileYouTube()) {
+        ensureMobileDownloadButton();
+      }
+    });
 
     if (self === top) {
       function cancelAllAndNotify() {
@@ -94,6 +101,9 @@ export default defineContentScript({
       extractPlaylistMetadata();
       setupAudioTrackWatcher();
       setupCaptionTrackWatcher();
+      if (isMobileYouTube()) {
+        ensureMobileDownloadButton();
+      }
     }
 
     const isDocumentReady = document.readyState === "complete";
