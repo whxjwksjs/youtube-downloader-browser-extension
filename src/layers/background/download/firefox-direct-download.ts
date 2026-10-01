@@ -283,11 +283,11 @@ export async function runFirefoxDirectDownload(
     pageProxyFetch
   });
   if (wantsVideo && !resolved.videoUrl) {
-    throw new Error(`ANDROID_VR did not return URL for video itag ${videoItag}`);
+    throw new Error(`Player clients did not return URL for video itag ${videoItag}`);
   }
 
   if (wantsAudio && !resolved.audioUrl) {
-    throw new Error(`ANDROID_VR did not return URL for audio itag ${audioItag}`);
+    throw new Error(`Player clients did not return URL for audio itag ${audioItag}`);
   }
 
   const progress = createProgressReporter({
