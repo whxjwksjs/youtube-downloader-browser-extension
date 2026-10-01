@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# E2E harness for the embed-metadata handler logic (Opus fix + m4a-only cover).
-# Mirrors tryRemuxWithoutCover / tryEmbedWithCover arg-for-arg using system ffmpeg.
+# E2E harness for the embed-metadata handler logic.
+# Mirrors tryRemuxWithoutCover / tryEmbedWithCover / tryRemuxWithPictureTag
+# arg-for-arg using system ffmpeg.
 set -u
 cd "$(dirname "$0")"
 WORK="$(mktemp -d)"
@@ -60,6 +61,43 @@ ffmpeg -v error -y -f matroska -i "$WORK/input.weba" -f image2 -i "$WORK/cover.j
   -map 0:a -map 1 -c:v mjpeg -disposition:v attached_pic -c:a copy "$WORK/bad.opus" 2>/dev/null
 rc=$?
 check "opus+cover attach fails as expected" "$([ $rc -ne 0 ] && echo nonzero || echo zero)" "nonzero"
+
+echo "--- Test 4: opus output with cover via METADATA_BLOCK_PICTURE ---"
+# Mirrors tryRemuxWithPictureTag: base64 FLAC picture block as vorbis comment.
+PICTURE_B64=$(python3 - "$WORK/cover.jpg" <<'EOF'
+import struct, base64, sys
+img = open(sys.argv[1], 'rb').read()
+mime = b'image/jpeg'
+block = struct.pack('>I', 3) + struct.pack('>I', len(mime)) + mime + struct.pack('>I', 0)
+block += struct.pack('>IIII', 0, 0, 0, 0) + struct.pack('>I', len(img)) + img
+print(base64.b64encode(block).decode())
+EOF
+)
+ffmpeg -v error -y -f matroska -i "$WORK/input.weba" -map 0:a -c:a copy \
+  -metadata title="Test Title" -metadata comment="$WATCH" \
+  -metadata "METADATA_BLOCK_PICTURE=$PICTURE_B64" "$WORK/out-pic.opus"
+rc=$?
+check "opus picture-tag remux exit code" "$rc" "0"
+if [ $rc -eq 0 ]; then
+  vcodec=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$WORK/out-pic.opus")
+  check "opus file exposes cover as picture stream" "$vcodec" "mjpeg"
+  cwidth=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$WORK/out-pic.opus")
+  check "opus cover width (widescreen, not square)" "$cwidth" "1280"
+fi
+
+echo "--- Test 5: mp3 output with widescreen cover (stream attach) ---"
+# Mirrors tryEmbedWithCover for mp3: cover attached as attached_pic (ID3 APIC).
+ffmpeg -v error -y -f matroska -i "$WORK/input.weba" -f image2 -i "$WORK/cover.jpg" \
+  -map 0:a -map 1 -c:v copy -disposition:v attached_pic -c:a libmp3lame \
+  -metadata title="Test Title" -metadata comment="$WATCH" "$WORK/out.mp3"
+rc=$?
+check "mp3 embed exit code" "$rc" "0"
+if [ $rc -eq 0 ]; then
+  acodec=$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$WORK/out.mp3")
+  check "mp3 file has mp3 audio" "$acodec" "mp3"
+  cwidth=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$WORK/out.mp3")
+  check "mp3 cover width (widescreen, not square)" "$cwidth" "1280"
+fi
 
 echo
 echo "passed=$pass failed=$fail"
