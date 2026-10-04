@@ -4,28 +4,36 @@ export default defineContentScript({
   runAt: "document_start",
   allFrames: true,
   main() {
-    Object.defineProperty(document, "visibilityState", {
-      get() {
-        return "visible";
-      },
-      configurable: true
-    });
-    Object.defineProperty(document, "hidden", {
-      get() {
-        return false;
-      },
-      configurable: true
-    });
-    document.hasFocus = () => true;
+    // Some pages (notably m.youtube.com) lock these properties down as
+    // non-configurable; redefining them then throws. Never let the spoof
+    // take the whole content script down — skip quietly when locked.
+    spoofGetter(document, "visibilityState", () => "visible");
+    spoofGetter(document, "hidden", () => false);
+    try {
+      document.hasFocus = () => true;
+    } catch {
+      // Ignore: page locked the method down.
+    }
 
     const isIframe = self !== top;
     if (isIframe) {
-      Object.defineProperty(window, "frameElement", {
-        get() {
-          return null;
-        },
-        configurable: true
-      });
+      spoofGetter(window, "frameElement", () => null);
     }
   }
 });
+
+function spoofGetter(target: object, property: string, get: () => unknown) {
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(target, property);
+    if (descriptor && descriptor.configurable === false) {
+      return;
+    }
+
+    Object.defineProperty(target, property, {
+      get,
+      configurable: true
+    });
+  } catch {
+    // Ignore: page does not allow redefinition (e.g. hardened mobile pages).
+  }
+}

@@ -67,5 +67,11 @@ export function registerCrossWorldHandlers({ isDownloadIframe, context }: Regist
     }
   }));
 
+  // MAIN-world scripts have no extension runtime API, so they report
+  // diagnostics through us; forward each entry to the background log store.
+  crossWorldMessenger.onMessage(CrossWorldMessage.ReportDiagnosticLog, ({ data }) => {
+    sendMessage(MessageType.ReportDiagnosticLog, data).catch(() => {});
+  });
+
   registerDownloadProgressHandlers();
 }

@@ -7,6 +7,7 @@ import type {
   VideoData,
   VideoMetadata
 } from "@/types";
+import type { DiagnosticLogEntry } from "@/lib/diagnostics/diagnostic-log";
 import { ProgressType } from "@/types";
 import { defineCustomEventMessaging } from "@webext-core/messaging/page";
 
@@ -40,7 +41,8 @@ export const CrossWorldMessage = {
   ReportPageProgress: "reportPageProgress",
   ReportMainDownloadFailed: "reportMainDownloadFailed",
   RequestPageDownload: "requestPageDownload",
-  RefreshVideoData: "refreshVideoData"
+  RefreshVideoData: "refreshVideoData",
+  ReportDiagnosticLog: "reportDiagnosticLog"
 } as const;
 
 export interface PageMessengerSchema {
@@ -138,6 +140,7 @@ export interface PageMessengerSchema {
   }): void;
   [CrossWorldMessage.RequestPageDownload](data: { videoId: string }): void;
   [CrossWorldMessage.RefreshVideoData](): void;
+  [CrossWorldMessage.ReportDiagnosticLog](data: { entry: DiagnosticLogEntry }): void;
 }
 
 export type StreamDataPayload = Prettify<Parameters<PageMessengerSchema[typeof CrossWorldMessage.StreamData]>[0]>;

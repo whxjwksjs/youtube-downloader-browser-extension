@@ -1,5 +1,5 @@
 import { createDiagnosticLog, setDiagnosticSink, type DiagnosticLogLevel } from "@/lib/diagnostics/diagnostic-log";
-import { MessageType, sendMessage } from "@/lib/messaging/messaging";
+import { CrossWorldMessage, crossWorldMessenger } from "@/lib/messaging/cross-world-messenger";
 
 const contentLog = createDiagnosticLog();
 
@@ -8,7 +8,10 @@ export function logToDiagnostics(level: DiagnosticLogLevel, tag: string, message
   const entries = contentLog.getAll();
   const entry = entries[entries.length - 1];
   if (entry) {
-    sendMessage(MessageType.ReportDiagnosticLog, { entry }).catch(() => {});
+    // MAIN-world scripts cannot use extension messaging (the runtime API is
+    // unavailable in the page context), so hop through the isolated world,
+    // which forwards the entry to the background log store.
+    crossWorldMessenger.sendMessage(CrossWorldMessage.ReportDiagnosticLog, { entry }).catch(() => {});
   }
 }
 
