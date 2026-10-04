@@ -52,7 +52,8 @@ const MOBILE_BUTTON_CSS = `
 }
 `;
 
-const DOWNLOAD_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`;
+const DOWNLOAD_SVG_PATH = "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z";
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 export function isMobileYouTube() {
   return location.hostname === MOBILE_HOSTNAME;
@@ -121,7 +122,17 @@ export function mountMobileDownloadButton(videoData: VideoData) {
   elButton.id = MOBILE_BUTTON_ID;
   elButton.type = "button";
   elButton.setAttribute("aria-label", buttonLabel);
-  elButton.innerHTML = `${DOWNLOAD_SVG}<span>${buttonLabel}</span>`;
+  // Built with DOM APIs instead of innerHTML: YouTube enforces Trusted
+  // Types, and innerHTML assignments throw on the page.
+  const elIcon = document.createElementNS(SVG_NAMESPACE, "svg");
+  elIcon.setAttribute("viewBox", "0 0 24 24");
+  elIcon.setAttribute("aria-hidden", "true");
+  const elPath = document.createElementNS(SVG_NAMESPACE, "path");
+  elPath.setAttribute("d", DOWNLOAD_SVG_PATH);
+  elIcon.append(elPath);
+  const elLabel = document.createElement("span");
+  elLabel.textContent = buttonLabel;
+  elButton.append(elIcon, elLabel);
   elButton.addEventListener("click", () => {
     handleMobileDownloadClick(videoData, elButton).catch(() => {});
   });
