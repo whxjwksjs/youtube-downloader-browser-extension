@@ -46,7 +46,15 @@ export async function buildVideoMetadata(videoId: string) {
   const albumArtist = descriptionMeta?.mainArtist || titleMeta?.mainArtist || undefined;
   const isGenresPresent = genres.length > 0;
 
-  const youtubeThumbnailUrl = videoDetails?.thumbnail?.thumbnails?.at(-1)?.url;
+  // Pick the largest thumbnail by width rather than blindly taking the last
+  // entry: the array isn't guaranteed to be size-ordered, and mobile player
+  // responses have served smaller webp variants last.
+  const thumbnails = videoDetails?.thumbnail?.thumbnails ?? [];
+  const largestThumbnail = thumbnails.reduce<{ url: string; width: number; height: number } | undefined>(
+    (best, current) => (current.width > (best?.width ?? 0) ? current : best),
+    undefined
+  );
+  const youtubeThumbnailUrl = largestThumbnail?.url ?? thumbnails.at(-1)?.url;
 
   return {
     title,
