@@ -53,7 +53,12 @@ function preferJpegThumbnail(url: string) {
 
 export async function fetchThumbnail(url: string) {
   try {
-    const response = await fetch(preferJpegThumbnail(url));
+    // Request JPEG explicitly: i.ytimg.com content-negotiates and will
+    // otherwise return WebP bytes even for a .jpg URL when the browser's
+    // default Accept header advertises image/webp.
+    const response = await fetch(preferJpegThumbnail(url), {
+      headers: { Accept: "image/jpeg" }
+    });
     if (!response.ok) {
       return null;
     }
