@@ -100,7 +100,20 @@ export async function fetchCaptionWebVttData({
     const isTranslated = !!track.translationLanguageCode;
     const sourceVssId = isTranslated ? track.sourceTrackVssId! : track.vssId;
     const baseUrl = freshUrls.get(sourceVssId) ?? track.baseUrl;
-    const url = new URL(baseUrl);
+    if (!baseUrl) {
+      // A caption track without a usable URL must not kill the whole
+      // download; skip it and keep the results index-aligned.
+      results.push(null);
+      continue;
+    }
+
+    let url: URL;
+    try {
+      url = new URL(baseUrl);
+    } catch {
+      results.push(null);
+      continue;
+    }
     url.searchParams.set(CAPTION_FORMAT_PARAM, CAPTION_FORMAT_VTT);
 
     if (isTranslated) {

@@ -59,7 +59,7 @@ async function initDecryptor() {
   return cachedState;
 }
 
-export async function decryptSignatureCipher(signatureCipher: string) {
+export async function decryptSignatureCipher(signatureCipher: string): Promise<string | null> {
   const cipherParameters = new URLSearchParams(signatureCipher);
   const encryptedSig = cipherParameters.get("s");
   const sigParam = cipherParameters.get("sp") ?? DEFAULT_SIG_PARAM;
@@ -74,7 +74,15 @@ export async function decryptSignatureCipher(signatureCipher: string) {
     signature: decodeURIComponent(encryptedSig),
     operations
   });
-  const resultUrl = new URL(decodeURIComponent(url));
+  let resultUrl: URL;
+  try {
+    resultUrl = new URL(decodeURIComponent(url));
+  } catch {
+    // Unparseable stream URL: let the caller fall back to other resolution
+    // paths (SABR, progressive) instead of killing the download.
+    return null;
+  }
+
   resultUrl.searchParams.set(sigParam, decryptedSig);
   return resultUrl.href;
 }

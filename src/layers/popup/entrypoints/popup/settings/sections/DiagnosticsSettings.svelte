@@ -72,7 +72,7 @@
     {:else if entries.length === 0}
       <span class="log-empty">No log entries yet. Download something or retry the failing step, then refresh.</span>
     {:else}
-      {#each entries as entry (entry.timestamp)}
+      {#each entries as entry, index (index)}
         <div class="log-line log-{entry.level}">{formatLogEntry(entry)}</div>
       {/each}
     {/if}

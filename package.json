@@ -1,6 +1,6 @@
 {
   "name": "youtube-downloader",
-  "version": "2.6.6",
+  "version": "2.6.7",
   "description": "A browser extension for downloading video and audio from YouTube.",
   "repository": "https://github.com/whxjwksjs/youtube-downloader-browser-extension",
   "author": "Gc",
