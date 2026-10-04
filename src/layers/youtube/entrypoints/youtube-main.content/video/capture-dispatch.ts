@@ -63,6 +63,16 @@ function readInitialDataTitle(videoId: string) {
 export async function buildAndDispatchVideoData({ playerResponse }: {
   playerResponse: PlayerResponse;
 }) {
+  try {
+    await buildAndDispatchVideoDataInner({ playerResponse });
+  } catch (error) {
+    logDiag("error", "capture", `buildAndDispatchVideoData threw: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+async function buildAndDispatchVideoDataInner({ playerResponse }: {
+  playerResponse: PlayerResponse;
+}) {
   const { clientVersion, clientName } = readYtcfg();
   const videoData = buildVideoData({
     playerResponse,
@@ -193,6 +203,7 @@ async function tryDispatchOnce(isDownloadIframe: boolean): Promise<PollOutcome> 
 
 export async function extractAndDispatchVideoData() {
   const isOnWatchPage = location.pathname.startsWith(WATCH_PATHNAME);
+  logDiag("info", "capture", `extractAndDispatchVideoData: watch=${isOnWatchPage} mobile=${isMobileYouTube()} path=${location.pathname}`);
   if (!isOnWatchPage) {
     return;
   }
@@ -207,4 +218,6 @@ export async function extractAndDispatchVideoData() {
 
     await new Promise(resolve => setTimeout(resolve, PLAYER_RESPONSE_POLL_INTERVAL_MS));
   }
+
+  logDiag("warn", "capture", `No player response after ${PLAYER_RESPONSE_POLL_ATTEMPTS} polls on ${location.hostname}${location.pathname}; ytInitialPlayerResponse present=${!!window.ytInitialPlayerResponse}`);
 }

@@ -61,8 +61,16 @@ export async function handleNavigateSuccess() {
 
   const expectedVideoId = new URLSearchParams(location.search).get(WATCH_VIDEO_ID_PARAM);
 
+  // Desktop exposes the player response on ytd-watch-flexy; m.youtube.com has
+  // no such element, so fall back to the embedded initial player response.
+  function readPlayerResponse() {
+    return document.querySelector(WATCH_FLEXY_TAG)?.playerData
+      ?? window.ytInitialPlayerResponse
+      ?? null;
+  }
+
   for (let attempt = 0; attempt < PLAYER_DATA_POLL_ATTEMPTS; attempt++) {
-    const playerResponse = document.querySelector(WATCH_FLEXY_TAG)?.playerData ?? null;
+    const playerResponse = readPlayerResponse();
     const isReady = playerResponse?.videoDetails?.videoId === expectedVideoId;
     if (isReady) {
       await buildAndDispatchVideoData({ playerResponse });

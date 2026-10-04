@@ -177,6 +177,9 @@ export function ensureMobileDownloadButton() {
     return;
   }
 
+  const startVideoId = new URLSearchParams(location.search).get("v");
+  logDiag("info", "mobile-button", `Retry loop started for video ${startVideoId ?? "unknown"} (cache has=${startVideoId ? videoDataCache.has(startVideoId) : false}).`);
+
   let attempts = 0;
   const timer = setInterval(() => {
     attempts++;

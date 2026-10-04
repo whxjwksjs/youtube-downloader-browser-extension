@@ -9,8 +9,10 @@ import { cancelAllActiveDownloads } from "./video/download";
 import { extractPlaylistMetadata, handleNavigateSuccess } from "./video/playlist-metadata";
 import { extractAndDispatchVideoData } from "./video/video-data";
 import { ensureMobileDownloadButton, isMobileYouTube } from "./watch-button/mobile-download-button";
+import { logDiag } from "@/lib/diagnostics/diagnostic-log";
 import { CrossWorldMessage, crossWorldMessenger } from "@/lib/messaging/cross-world-messenger";
 import { initContentOptions } from "@/lib/ui/synced-stores.svelte";
+import { INITIAL_OPTIONS } from "@/lib/youtube/video-helpers";
 import type { PlayerResponse } from "@/types";
 
 const YTDL_IFRAME_QUERY_PARAM = "ytdl=1";
@@ -63,6 +65,8 @@ export default defineContentScript({
       return;
     }
 
+    logDiag("info", "content-main", `MAIN script start on ${location.hostname}${location.pathname} (mobile=${isMobileYouTube()}, top=${self === top})`);
+
     if (self !== top) {
       setupIframeSilencer();
     }
@@ -95,9 +99,23 @@ export default defineContentScript({
     }
 
     async function initializeOnLoad() {
-      const options = await crossWorldMessenger.sendMessage(CrossWorldMessage.RequestOptions);
-      initContentOptions(options);
-      await extractAndDispatchVideoData();
+      // The isolated world should answer instantly; if it doesn't (e.g. it
+      // failed to inject on this page), fall back to defaults rather than
+      // hanging forever and never mounting the button.
+      const options = await Promise.race([
+        crossWorldMessenger.sendMessage(CrossWorldMessage.RequestOptions),
+        new Promise<null>(resolve => setTimeout(() => {
+          logDiag("warn", "content-main", "RequestOptions timed out; using default options.");
+          resolve(null);
+        }, 3000))
+      ]);
+      initContentOptions(options ?? INITIAL_OPTIONS);
+      try {
+        await extractAndDispatchVideoData();
+      } catch (error) {
+        logDiag("error", "content-main", `Video-data extraction failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
       extractPlaylistMetadata();
       setupAudioTrackWatcher();
       setupCaptionTrackWatcher();
