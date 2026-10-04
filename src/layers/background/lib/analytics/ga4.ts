@@ -3,7 +3,6 @@ import { getOrCreateClientId } from "@/lib/storage/storage";
 const GA4_MEASUREMENT_ID: string | undefined = import.meta.env.WXT_GA4_MEASUREMENT_ID;
 const GA4_API_SECRET: string | undefined = import.meta.env.WXT_GA4_API_SECRET;
 const GA4_ENDPOINT = "https://www.google-analytics.com/mp/collect";
-const UNINSTALL_BASE_URL = "https://avi12.github.io/youtube-downloader/uninstall";
 const DAILY_HEARTBEAT_ALARM = "ytdlDailyHeartbeat";
 const ENGAGEMENT_TIME_MSEC = 100;
 const MICROSECONDS_PER_MILLISECOND = 1000;
@@ -189,12 +188,8 @@ export async function trackDownloadComplete() {
 }
 
 export async function setUninstallUrl() {
-  if (await isDevelopmentInstall()) {
-    return;
-  }
-
-  const clientId = await getOrCreateClientId();
-  await browser.runtime.setUninstallURL(`${UNINSTALL_BASE_URL}?client_id=${clientId}`);
+  // Fork: no uninstall survey page exists for this fork, and the upstream
+  // author's page must not receive our users. Intentionally a no-op.
 }
 
 const lastActiveDateItem = storage.defineItem<string | null>("local:ytdlLastActiveDate", { fallback: null });

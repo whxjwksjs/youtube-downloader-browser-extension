@@ -91,7 +91,7 @@
     <div class="popup-header-top">
       <h1 class="popup-title">YouTube Downloader</h1>
       <span class="popup-credit">
-        by <a href="https://avi12.com" target="_blank">Avi</a>
+        by <a href="https://github.com/whxjwksjs" target="_blank">Gc</a>
       </span>
     </div>
     <TabNav

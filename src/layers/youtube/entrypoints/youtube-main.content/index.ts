@@ -81,6 +81,10 @@ export default defineContentScript({
     document.addEventListener(EVENT_YT_NAVIGATE_FINISH, setupCaptionTrackWatcher);
     document.addEventListener(EVENT_YT_NAVIGATE_FINISH, () => {
       if (isMobileYouTube()) {
+        // SPA navigations don't refresh window.ytInitialPlayerResponse, so
+        // re-run extraction for the new video (falls back to fetching the
+        // watch HTML) before retrying the button mount.
+        extractAndDispatchVideoData().catch(() => {});
         ensureMobileDownloadButton();
       }
     });

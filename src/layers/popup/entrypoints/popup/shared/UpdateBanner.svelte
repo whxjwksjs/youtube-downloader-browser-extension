@@ -5,7 +5,7 @@
 
   const { version }: Props = $props();
 
-  const LATEST_RELEASE_URL = "https://github.com/avi12/youtube-downloader/releases/latest";
+  const LATEST_RELEASE_URL = "https://github.com/whxjwksjs/youtube-downloader-browser-extension/releases/latest";
 </script>
 
 <a class="update-banner" href={LATEST_RELEASE_URL} target="_blank">

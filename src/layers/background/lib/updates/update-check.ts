@@ -3,7 +3,7 @@ import { z } from "@/lib/zod";
 
 const UPDATE_CHECK_ALARM = "ytdlUpdateCheck";
 const CHECK_PERIOD_MINUTES = 24 * 60;
-const LATEST_RELEASE_API = "https://api.github.com/repos/avi12/youtube-downloader/releases/latest";
+const LATEST_RELEASE_API = "https://api.github.com/repos/whxjwksjs/youtube-downloader-browser-extension/releases/latest";
 const TAG_VERSION_PREFIX = /^v/;
 const BADGE_TEXT = "!";
 const BADGE_COLOR = "#cc0000";

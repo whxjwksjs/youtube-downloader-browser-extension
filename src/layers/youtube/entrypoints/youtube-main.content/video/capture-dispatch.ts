@@ -6,7 +6,7 @@ import {
 import { injectSegmentedDownloadButton } from "../watch-button/watch-button";
 import { generatePoTokenIfNeeded, readYtcfg, videoDataCache } from "./video-data";
 import { logDiag } from "@/lib/diagnostics/diagnostic-log";
-import { buildVideoData } from "./youtube-api";
+import { buildVideoData, extractPlayerResponseFromHtml } from "./youtube-api";
 import { CrossWorldMessage, crossWorldMessenger } from "@/lib/messaging/cross-world-messenger";
 import { videoDataStore } from "@/lib/ui/synced-stores.svelte";
 import { getMoviePlayer } from "@/lib/youtube/movie-player";
@@ -171,13 +171,7 @@ const PollOutcome = {
 
 type PollOutcome = (typeof PollOutcome)[keyof typeof PollOutcome];
 
-async function tryDispatchOnce(isDownloadIframe: boolean): Promise<PollOutcome> {
-  const playerResponse = window.ytInitialPlayerResponse ?? null;
-  const hasVideoId = !!playerResponse?.videoDetails?.videoId;
-  if (!hasVideoId) {
-    return PollOutcome.Wait;
-  }
-
+async function tryDispatchOnce(isDownloadIframe: boolean, playerResponse: PlayerResponse): Promise<PollOutcome> {
   const isUnplayable = playerResponse.playabilityStatus?.status === PlayabilityStatus.Unplayable;
   if (isUnplayable && isDownloadIframe) {
     if (reloadUnplayableIframe()) {
@@ -201,6 +195,27 @@ async function tryDispatchOnce(isDownloadIframe: boolean): Promise<PollOutcome> 
   return PollOutcome.Ready;
 }
 
+// m.youtube.com is an SPA: window.ytInitialPlayerResponse is only set on full
+// page loads, so after a client-side navigation it is missing or still holds
+// the previous video's response. Fetch the server-rendered watch HTML (same
+// origin) and parse the embedded player response instead.
+async function fetchPlayerResponseFromWatchHtml(videoId: string): Promise<PlayerResponse | null> {
+  try {
+    const response = await fetch(`/watch?v=${encodeURIComponent(videoId)}`);
+    if (!response.ok) {
+      return null;
+    }
+
+    return extractPlayerResponseFromHtml(await response.text());
+  } catch {
+    return null;
+  }
+}
+
+function readUrlVideoId() {
+  return new URLSearchParams(location.search).get("v") ?? "";
+}
+
 export async function extractAndDispatchVideoData() {
   const isOnWatchPage = location.pathname.startsWith(WATCH_PATHNAME);
   logDiag("info", "capture", `extractAndDispatchVideoData: watch=${isOnWatchPage} mobile=${isMobileYouTube()} path=${location.pathname}`);
@@ -209,11 +224,34 @@ export async function extractAndDispatchVideoData() {
   }
 
   const isDownloadIframe = isInDownloadIframe();
+  const urlVideoId = readUrlVideoId();
+  let htmlFallbackAttempted = false;
   for (let attempt = 0; attempt < PLAYER_RESPONSE_POLL_ATTEMPTS; attempt++) {
-    const outcome = await tryDispatchOnce(isDownloadIframe);
-    const isTerminal = outcome === PollOutcome.Ready || outcome === PollOutcome.RetriedAsync;
-    if (isTerminal) {
-      return;
+    const pageResponse = window.ytInitialPlayerResponse ?? null;
+    const pageVideoId = pageResponse?.videoDetails?.videoId ?? "";
+    // In the download iframe there is no ?v= param, so any page response is
+    // acceptable there; on a watch page it must match the URL's video.
+    const isPageResponseFresh = !!pageVideoId && (!urlVideoId || pageVideoId === urlVideoId);
+    if (isPageResponseFresh && pageResponse) {
+      const outcome = await tryDispatchOnce(isDownloadIframe, pageResponse);
+      const isTerminal = outcome === PollOutcome.Ready || outcome === PollOutcome.RetriedAsync;
+      if (isTerminal) {
+        return;
+      }
+    } else if (!htmlFallbackAttempted && urlVideoId && !isDownloadIframe) {
+      htmlFallbackAttempted = true;
+      const htmlResponse = await fetchPlayerResponseFromWatchHtml(urlVideoId);
+      const htmlVideoId = htmlResponse?.videoDetails?.videoId ?? "";
+      if (htmlVideoId === urlVideoId && htmlResponse) {
+        logDiag("info", "capture", `Using HTML-fetched player response for ${urlVideoId} (page var ${pageVideoId ? "stale" : "missing"}).`);
+        const outcome = await tryDispatchOnce(isDownloadIframe, htmlResponse);
+        const isTerminal = outcome === PollOutcome.Ready || outcome === PollOutcome.RetriedAsync;
+        if (isTerminal) {
+          return;
+        }
+      } else {
+        logDiag("warn", "capture", `HTML player-response fetch failed for ${urlVideoId}; continuing to poll the page var.`);
+      }
     }
 
     await new Promise(resolve => setTimeout(resolve, PLAYER_RESPONSE_POLL_INTERVAL_MS));
