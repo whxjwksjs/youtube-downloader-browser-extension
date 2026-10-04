@@ -51,26 +51,53 @@ function preferJpegThumbnail(url: string) {
   return url.replace(THUMBNAIL_WEBP_PATH, THUMBNAIL_JPEG_PATH).replace(/\.webp(\?|$)/, ".jpg$1");
 }
 
-export async function fetchThumbnail(url: string) {
-  try {
-    // Request JPEG explicitly: i.ytimg.com content-negotiates and will
-    // otherwise return WebP bytes even for a .jpg URL when the browser's
-    // default Accept header advertises image/webp.
-    const response = await fetch(preferJpegThumbnail(url), {
-      headers: { Accept: "image/jpeg" }
-    });
-    if (!response.ok) {
-      return null;
-    }
+// The player response's thumbnail array can't be trusted for quality: mobile
+// responses have served small WebP variants as the largest entry. Build the
+// canonical thumbnail URLs from the video ID instead (this is what yt-dlp
+// does): maxresdefault is the original 1280x720 upload thumbnail, with
+// sddefault/hqdefault as fallbacks for videos that lack one. The
+// player-response URL stays as a last resort.
+const THUMBNAIL_BASE_URL = "https://i.ytimg.com/vi/";
+const THUMBNAIL_CANDIDATE_NAMES = ["maxresdefault", "sddefault", "hqdefault"] as const;
 
-    const data = new Uint8Array(await response.arrayBuffer());
-    return {
-      data,
-      extension: detectImageExtension(data)
-    };
-  } catch {
-    return null;
+function buildThumbnailCandidates(videoId: string, fallbackUrl?: string) {
+  const candidates = THUMBNAIL_CANDIDATE_NAMES.map(name => `${THUMBNAIL_BASE_URL}${videoId}/${name}.jpg`);
+  if (fallbackUrl) {
+    candidates.push(preferJpegThumbnail(fallbackUrl));
   }
+
+  return candidates;
+}
+
+export async function fetchThumbnail(videoId: string, fallbackUrl?: string) {
+  const candidates = buildThumbnailCandidates(videoId, fallbackUrl);
+  for (const url of candidates) {
+    try {
+      // Request JPEG explicitly: i.ytimg.com content-negotiates and will
+      // otherwise return WebP bytes even for a .jpg URL when the client's
+      // default Accept header advertises image/webp.
+      const response = await fetch(url, {
+        headers: { Accept: "image/jpeg" }
+      });
+      if (!response.ok) {
+        continue;
+      }
+
+      const data = new Uint8Array(await response.arrayBuffer());
+      if (data.length === 0) {
+        continue;
+      }
+
+      return {
+        data,
+        extension: detectImageExtension(data)
+      };
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  return null;
 }
 
 export function sanitizeForFFmpeg(value: string) {

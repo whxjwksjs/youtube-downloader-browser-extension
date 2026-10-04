@@ -79,7 +79,7 @@ export async function handleMuxVideoAudio(job: MuxVideoAudioJob) {
   let coverFilename: string | undefined;
   const isCoverArtEmbeddable = Boolean(thumbnailUrl) && targetExtension !== WEBM_EXTENSION;
   if (isCoverArtEmbeddable) {
-    const thumbnail = await fetchThumbnail(thumbnailUrl!);
+    const thumbnail = await fetchThumbnail(videoId, thumbnailUrl!);
     if (thumbnail) {
       coverFilename = `${COVER_FILENAME_PREFIX}.${thumbnail.extension}`;
       state.ffmpeg!.FS.writeFile(coverFilename, thumbnail.data);

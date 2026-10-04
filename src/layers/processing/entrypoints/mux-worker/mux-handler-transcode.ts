@@ -51,8 +51,8 @@ export function handleTranscodeAudio(job: TranscodeAudioJob) {
   }
 }
 
-async function tryWriteCoverArt(coverArtUrl: string) {
-  const thumbnail = await fetchThumbnail(coverArtUrl);
+async function tryWriteCoverArt(videoId: string, coverArtUrl: string) {
+  const thumbnail = await fetchThumbnail(videoId, coverArtUrl);
   if (!thumbnail) {
     return null;
   }
@@ -67,11 +67,12 @@ type ExtractAudioWithCoverArtParams = Prettify<{
   outputFilename: string;
   targetContainer: string;
   coverArtUrl: string;
+  videoId: string;
 }>;
 async function extractAudioWithCoverArt({
-  sourceFilename, outputFilename, targetContainer, coverArtUrl
+  sourceFilename, outputFilename, targetContainer, coverArtUrl, videoId
 }: ExtractAudioWithCoverArtParams) {
-  const coverFilename = await tryWriteCoverArt(coverArtUrl);
+  const coverFilename = await tryWriteCoverArt(videoId, coverArtUrl);
   const audioCodec = getAudioFallbackCodec(targetContainer) ?? FFMPEG_CODEC_COPY;
   const ffmpegArgs = [...buildInputArgs(sourceFilename)];
   if (coverFilename) {
@@ -112,7 +113,8 @@ export async function handleTranscodeFile(job: TranscodeFileJob) {
           sourceFilename,
           outputFilename,
           targetContainer,
-          coverArtUrl
+          coverArtUrl,
+          videoId
         });
         coverFilenameForCleanup = result.coverFilename;
         return result.args;

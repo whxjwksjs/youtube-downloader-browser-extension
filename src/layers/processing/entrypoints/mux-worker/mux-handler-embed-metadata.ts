@@ -224,7 +224,7 @@ export async function handleEmbedMetadata(job: EmbedMetadataJob) {
     const supportsPictureTag = canEmbedPictureTag(outputExtension);
     let thumbnail: { data: Uint8Array; extension: string } | null = null;
     if ((supportsStreamCover || supportsPictureTag) && thumbnailUrl) {
-      thumbnail = await fetchThumbnail(thumbnailUrl);
+      thumbnail = await fetchThumbnail(videoId, thumbnailUrl);
     }
 
     const withCover = supportsStreamCover && thumbnail
